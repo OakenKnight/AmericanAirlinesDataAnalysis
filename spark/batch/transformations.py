@@ -2,10 +2,8 @@
 
 import os
 from pyspark.sql import SparkSession, Row
-from pyspark.sql.functions import explode
-from pyspark.sql.functions import create_map
-from pyspark.sql.functions import col
-from pyspark.sql.functions import expr
+import pyspark.sql.functions as F
+
 from pyspark.sql.types import *
 
 print('=========================== Transformations started ===========================')
@@ -17,52 +15,106 @@ dfDelaysTotal2013FromCSV = spark.read.option("multiline", "true").option("sep", 
     .option("inferSchema", "true") \
     .csv(Hdf_NAMENODE + "/data/batch-2013.csv")
 
-dfDelaysTotal2014FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-    .option("inferSchema", "true") \
-    .csv(Hdf_NAMENODE + "/data/batch-2014.csv")
+# dfDelaysTotal2014FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+#     .option("inferSchema", "true") \
+#     .csv(Hdf_NAMENODE + "/data/batch-2014.csv")
 
-dfDelaysTotal2015FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-    .option("inferSchema", "true") \
-    .csv(Hdf_NAMENODE + "/data/batch-2015.csv")
+# dfDelaysTotal2015FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+#     .option("inferSchema", "true") \
+#     .csv(Hdf_NAMENODE + "/data/batch-2015.csv")
 
-dfDelaysTotal2016FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-    .option("inferSchema", "true") \
-    .csv(Hdf_NAMENODE + "/data/batch-2016.csv")
+# dfDelaysTotal2016FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+#     .option("inferSchema", "true") \
+#     .csv(Hdf_NAMENODE + "/data/batch-2016.csv")
 
-dfDelaysTotal2017FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-    .option("inferSchema", "true") \
-    .csv(Hdf_NAMENODE + "/data/batch-2017.csv")
+# dfDelaysTotal2017FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+#     .option("inferSchema", "true") \
+#     .csv(Hdf_NAMENODE + "/data/batch-2017.csv")
 
 print("===================== DELETING NOT USED COLUMNS =====================")
 
 dfDelaysTotal2013 = dfDelaysTotal2013FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-dfDelaysTotal2014 = dfDelaysTotal2014FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-dfDelaysTotal2015 = dfDelaysTotal2015FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-dfDelaysTotal2016 = dfDelaysTotal2016FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-dfDelaysTotal2017 = dfDelaysTotal2017FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-
+# dfDelaysTotal2014 = dfDelaysTotal2014FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+# # dfDelaysTotal2015 = dfDelaysTotal2015FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+# dfDelaysTotal2016 = dfDelaysTotal2016FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+# dfDelaysTotal2017 = dfDelaysTotal2017FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
 print("===================== DONE DELETING COLUMNS =====================")
 
 print("===================== DOING UNION IN ONE BIG DATAFRAME=====================")
-dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
-dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
-dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
-dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
+# dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
+# dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
+# dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
+# dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
 print("===================== DONE =====================")
 
-customAggregatedSchemaG = StructType() \
-    .add("OP_CARRIER", StringType()) \
-    .add("NUM_OF_FLIGHTS", IntegerType()) \
-    .add("NUM_OF_DELAYED_FLIGHTS", IntegerType()) \
-    .add("TOTAL_DELAY_ALL_TIME", IntegerType()) \
-    .add("TOTAL_CANCELLED", IntegerType()) \
 
-    
+# 2018-01-01	UA	488	MFE	IAH	1726							1844			1	B	0	78			316
+
+# 505798
+# 268151
+# 232981
+# customAggregatedSchemaG = StructType() \
+#     .add("OP_CARRIER", StringType()) \
+#     .add("NUM_OF_FLIGHTS", IntegerType()) \
+#     .add("NUM_OF_DELAYED_FLIGHTS", IntegerType()) \
+#     .add("DELAY_ALL_TIME_DEP", IntegerType()) \
+#     .add("DELAY_ALL_TIME_ARR", IntegerType()) \
+#     .add("TOTAL_CANCELLED", IntegerType()) \
+cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
+
+# summedDelaysByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").sum('CRS_DEP_TIME').orderBy("OP_CARRIER").withColumnRenamed("sum(CRS_DEP_TIME)", "TOTAL_DELAY_ALL_TIME")
+# summedFlightsByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").count().withColumnRenamed("count", "NUM_OF_FLIGHTS")
+# summedCanceledByCarrier2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('CANCELLED') > 0.0).alias('TOTAL_CANCELLED'))
+
+# summedDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') != "" ).alias("DELAY_ALL_TIME_DEP"))
+# summedDelayedFlights20131 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') != 0.0).alias("DELAY_ALL_TIME_DEP"), cnt_cond(F.col('DEP_DELAY') == 0.0).alias("NZM"))
+dfDelaysTotal2013.filter(dfDelaysTotal2013['OP_CARRIER'] == 'AS').show(100)
+
+# print(summedDelayedFlights2013.sum('TOTAL_DELAY_ALL_TIME'))
+
+# summedFlightsByCarrier2013.show()
+# summedDelayedFlights2013.show()
+# summedDelayedFlights2013.show()
+# JOINING TABLES TO FORM A SPECIAL ONE
+
+# summedDelaysByCarrier2013.join(summedFlightsByCarrier2013, ["OP_CARRIER"] ).join(summedCanceledByCarrier2013, ["OP_CARRIER"])
+
+
+
+# dfDelaysTotal2013.select(F.col("OP_CARRIER"),F.col("CANCELLED")).show()
+
+# 1.	Na koji način se rangiraju aerodromi kada je u pitanju kašnjenje pri polasku? 
+# Sortirati aerodrome prema DEP_DELAY
+
+# 2.	Na koji način se rangiraju aerodromi kada je u pitanju kašnjenje pri dolasku? 
+# Sortirati aerodrome prema ARR_DELAY
+
+# 3.	Na koji način se rangiraju aviokompanije kada je u pitanju kašnjenje? 
+# Nisam siguran da li treba sortirati aviokompanije samo prema CARRIER_DELAY ili prema zbiru CARRIER_DELAY, WEATHER_DELAY, NAS_DELAY, SECURITY_DELAY, LATE_AIRCRAFT_DELAY
+
+# 4.	Na koji način se rangiraju sami meseci? 
+# Ne razumem
+# 5.	Koji su najkritičniji periodi u godini za letenje?  Cilj je pokušati utvrditi korelaciju sa nekim praznicima. 
+# Ovo vrv mozes gledati i prema aerodromima I prema kompanijama. Mozda najbolje gledati spram ARR DELAY I DEP DELAY, za celu godinu pa izvuci dane. Vrv ce to biti thanksgiving. 4. Jul, bozic itd., a mozda i leto u nekim periodima
+# 6.	Koji je najkritičniji dan u nedelji za letenje? 
+# Isto preko delay i ARR I DEP, samo na nedeljnom nivou. Mozda ce ti odskakati ove praznicne nedelje, pa mozda treba njih izbaciti.
+# 7.	Koji je najgori period u toku dana, sa pragom od 3h? 
+# Isto ta dva delaya samo na nivou dana, opet pazi na praznike, nisu karakteristicni
+# 8.	Na koji način se rangiraju aviokompanije kada je u pitanju razlika između procenjenog vremena i vremena koje je stvarno proteklo od polaska do dolaska? 
+# Razlika CRS ELAPSED TIME I ACTUAL ELAPSED TIME
+# 9.	Da li na kašnjenje ikako utiče udaljenost između destinacija? 
+# Zar nije obrnuto pitanje? Da li udaljenost utice na kasnjenje? Ako je to pitanje, uzmi u obzir verovatno samo ARR DELAY i obrati paznju da li postoji korelacija izmedju ovog parametra i DISTANCE, ako raste DELAY sa porastom DISTANCE, onda utice.
+# 10.	Koja je avio kompanija sa najviše odustanaka u tromesečnom periodu? 
+# Vidi CANCELLED pa po kompanijama u tromesecnom periodu
+# 11.	Koje su države koje su najgore po pitanju kašnjenja?
+# Pogledaj DELAY i ARR i DEP i vidi po stejtovima
+
+
 # FL_DATE   1
 # OP_CARRIER 1
 # ORIGIN 1
@@ -98,8 +150,8 @@ customAggregatedSchemaG = StructType() \
 #         print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
 #         time.sleep(5)
 
-dfDelaysTotalYrs.unpersist()
+# dfDelaysTotalYrs.unpersist()
 
 
-dfDelaysTotalYrs.show(truncate=False)
+# dfDelaysTotalYrs.show(truncate=False)
 # dfDelays2018.show(10)
