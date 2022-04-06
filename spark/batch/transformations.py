@@ -55,6 +55,11 @@ print("===================== DONE =====================")
 
 # 2018-01-01	UA	488	MFE	IAH	1726							1844			1	B	0	78			316
 
+# 2013-01-01,EV,4486,IAH,SAV,1933,,,,,,,2240,,,1.0,C,0.0,127.0,,,851.0,,,,,,
+
+# 2013-01-11,UA,353,LAX,EWR,1532,,,,,,,2355,,,1.0,A,0.0,323.0,,,2454.0,,,,,,
+# FL_DATE,OP_CARRIER,OP_CARRIER_FL_NUM,ORIGIN,DEST,CRS_DEP_TIME,DEP_TIME,DEP_DELAY,TAXI_OUT,WHEELS_OFF,WHEELS_ON,TAXI_IN,CRS_ARR_TIME,ARR_TIME,ARR_DELAY,CANCELLED,CANCELLATION_CODE,DIVERTED,CRS_ELAPSED_TIME,ACTUAL_ELAPSED_TIME,AIR_TIME,DISTANCE,CARRIER_DELAY,WEATHER_DELAY,NAS_DELAY,SECURITY_DELAY,LATE_AIRCRAFT_DELAY,Unnamed: 27
+
 # 505798
 # 268151
 # 232981
@@ -67,22 +72,47 @@ print("===================== DONE =====================")
 #     .add("TOTAL_CANCELLED", IntegerType()) \
 cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
 
-# summedDelaysByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").sum('CRS_DEP_TIME').orderBy("OP_CARRIER").withColumnRenamed("sum(CRS_DEP_TIME)", "TOTAL_DELAY_ALL_TIME")
-# summedFlightsByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").count().withColumnRenamed("count", "NUM_OF_FLIGHTS")
-# summedCanceledByCarrier2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('CANCELLED') > 0.0).alias('TOTAL_CANCELLED'))
+# df2=dfDelaysTotal2013.select([F.when(F.col(c)==,None).otherwise(F.col(c)).alias(c) for c in dfDelaysTotal2013.columns])
 
-# summedDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') != "" ).alias("DELAY_ALL_TIME_DEP"))
-# summedDelayedFlights20131 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') != 0.0).alias("DELAY_ALL_TIME_DEP"), cnt_cond(F.col('DEP_DELAY') == 0.0).alias("NZM"))
-dfDelaysTotal2013.filter(dfDelaysTotal2013['OP_CARRIER'] == 'AS').show(100)
+# summedDelaysByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").sum('CRS_DEP_TIME').orderBy("OP_CARRIER").withColumnRenamed("sum(CRS_DEP_TIME)", "TOTAL_DELAY_ALL_TIME")
+summedFlightsByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").count().withColumnRenamed("count", "NUM_OF_FLIGHTS")
+summedCanceledByCarrier2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('CANCELLED') > 0.0).alias('TOTAL_CANCELLED'))
+summedDelayOnDeparture2013 = dfDelaysTotal2013.filter(F.col("DEP_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("DEP_DELAY"))
+summedDelayOnArrival2013 = dfDelaysTotal2013.filter(F.col("ARR_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("ARR_DELAY"))
+summedDepDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_DEP"))
+summedArrDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('ARR_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_ARR"))
+summedDelayedFlights2013 = dfDelaysTotal2013.filter(~((F.col("DEP_DELAY") == 0) | (F.col("DEP_DELAY") != 0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_DELAYED_FLIGHTS")
+
+# JOINING TABLES TO FORM A SPECIAL ONE
+
+df = summedFlightsByCarrier2013\
+.join(summedCanceledByCarrier2013, ["OP_CARRIER"])\
+.join(summedDelayedFlights2013,["OP_CARRIER"])\
+.join(summedDelayOnDeparture2013,["OP_CARRIER"])\
+.join(summedDelayOnArrival2013,["OP_CARRIER"])\
+.join(summedDepDelayedFlights2013,["OP_CARRIER"])\
+.join(summedArrDelayedFlights2013,["OP_CARRIER"])
+
+df.show()
 
 # print(summedDelayedFlights2013.sum('TOTAL_DELAY_ALL_TIME'))
 
 # summedFlightsByCarrier2013.show()
 # summedDelayedFlights2013.show()
 # summedDelayedFlights2013.show()
-# JOINING TABLES TO FORM A SPECIAL ONE
 
-# summedDelaysByCarrier2013.join(summedFlightsByCarrier2013, ["OP_CARRIER"] ).join(summedCanceledByCarrier2013, ["OP_CARRIER"])
+
+# dfDelaysTotal2013.filter(dfDelaysTotal2013['OP_CARRIER'] == 'UA').filter(dfDelaysTotal2013['DEST'] == 'EWR') \
+#                   .filter(dfDelaysTotal2013['CRS_DEP_TIME'] == '1532') \
+#                   .filter(dfDelaysTotal2013['FL_DATE'] == '2013-01-11')
+
+
+
+# df2.filter(df2['OP_CARRIER'] == 'UA').filter(df2['DEST'] == 'EWR') \
+#                   .filter(df2['CRS_DEP_TIME'] == '1532') \
+#                   .filter(df2['FL_DATE'] == '2013-01-11').show()
+
+
 
 
 

@@ -1,5 +1,6 @@
 #!/bin/bash
-# docker cp ../data/ namenode:/home
+
+docker cp ../data/ namenode:/home
 
 docker cp . namenode:/home
 

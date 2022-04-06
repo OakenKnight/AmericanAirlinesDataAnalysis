@@ -1,7 +1,3 @@
 #!/bin/bash
 
-DIR=/home
-
-cd $DIR
-
-/spark/bin/spark-submit /home/batch/transformations.py
+docker exec -it spark-master bash -c "cd home && cd batch && /spark/bin/spark-submit /home/batch/transformations.py"
