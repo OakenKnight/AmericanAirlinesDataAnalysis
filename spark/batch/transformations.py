@@ -56,20 +56,30 @@ print("===================== DONE =====================")
 cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
 
 # PART FOR AIRPLANE COMPANIES
-# print("+++++++++++++++++++++ CREATING DF FOR AIRPLANE COMPANIES +++++++++++++++++++++")
-# summedFlightsByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").count().withColumnRenamed("count", "NUM_OF_FLIGHTS")
-# summedCanceledByCarrier2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('CANCELLED') > 0.0).alias('TOTAL_CANCELLED'))
-# summedDelayedFlights1stQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-01-01') & (F.col("FL_DATE") <= '2013-03-31') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_1st_QUARTAL")
-# summedDelayedFlights2ndQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-04-01') & (F.col("FL_DATE") <= '2013-06-30') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_2nd_QUARTAL")
-# summedDelayedFlights3rdQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-07-01') & (F.col("FL_DATE") <= '2013-09-30') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_3rd_QUARTAL")
-# summedDelayedFlights4thQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-10-01') & (F.col("FL_DATE") <= '2013-12-31') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_4th_QUARTAL")
-# summedDelayOnDeparture2013 = dfDelaysTotal2013.filter(F.col("DEP_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("DEP_DELAY").alias('SUMMED_DELAY_ON_DEP'))
-# summedDelayOnArrival2013 = dfDelaysTotal2013.filter(F.col("ARR_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("ARR_DELAY").alias('SUMMED_DELAY_ON_ARR'))
-# summedDepDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_DEP"))
-# summedArrDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('ARR_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_ARR"))
-# summedDelayedFlights2013 = dfDelaysTotal2013.filter(((F.col("DEP_DELAY") > 0) | (F.col("ARR_DELAY") > 0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_DELAYED_FLIGHTS")
-# print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
+print("+++++++++++++++++++++ CREATING DF FOR AIRPLANE COMPANIES +++++++++++++++++++++")
 
+summedFlightsByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").count().withColumnRenamed("count", "NUM_OF_FLIGHTS")
+summedCanceledByCarrier2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('CANCELLED') > 0.0).alias('TOTAL_CANCELLED'))
+summedDelayedFlights1stQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-01-01') & (F.col("FL_DATE") <= '2013-03-31') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_1st_QUARTAL")
+summedDelayedFlights2ndQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-04-01') & (F.col("FL_DATE") <= '2013-06-30') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_2nd_QUARTAL")
+summedDelayedFlights3rdQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-07-01') & (F.col("FL_DATE") <= '2013-09-30') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_3rd_QUARTAL")
+summedDelayedFlights4thQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-10-01') & (F.col("FL_DATE") <= '2013-12-31') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_4th_QUARTAL")
+summedDelayOnDeparture2013 = dfDelaysTotal2013.filter(F.col("DEP_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("DEP_DELAY").alias('SUMMED_DELAY_ON_DEP'))
+summedDelayOnArrival2013 = dfDelaysTotal2013.filter(F.col("ARR_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("ARR_DELAY").alias('SUMMED_DELAY_ON_ARR'))
+summedDepDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_DEP"))
+summedArrDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('ARR_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_ARR"))
+summedDelayedFlights2013 = dfDelaysTotal2013.filter(((F.col("DEP_DELAY") > 0) | (F.col("ARR_DELAY") > 0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_DELAYED_FLIGHTS")
+summed_differences_crs_time_and_time_2013 = dfDelaysTotal2013.select(((F.col("DEP_TIME") - F.col("CRS_DEP_TIME"))).alias("DIFFERENCE_BETWEEN_FLIGHTS"), F.col("OP_CARRIER")).filter(F.col("DIFFERENCE_BETWEEN_FLIGHTS")>0).groupBy("OP_CARRIER").mean("DIFFERENCE_BETWEEN_FLIGHTS")
+
+print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
+
+# df = summed_differences_crs_time_and_time_2013\
+# .join(summed_differences_crs_time_and_time_20131, ["OP_CARRIER"])\
+# .join(summed_differences_crs_time_and_time_20132,['OP_CARRIER'])\
+# .join(summed_differences_crs_time_and_time_20133,['OP_CARRIER'])\
+# .join(summed_differences_crs_time_and_time_20134,['OP_CARRIER'])
+
+# df.show()
 
 # PART FOR AIRPLANE COMPANIES FOR TIME OF DAY
 # print("+++++++++++++++++++++ CREATING DF FOR AIRPLANE COMPANIES FOR 4h PERIODS +++++++++++++++++++++")
@@ -95,20 +105,21 @@ cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
 
 
 # JOINING TABLES TO FORM A SPECIAL ONE
-# print("+++++++++++++++++++++ JOINTING DFS FOR AIRPLANE COMPANIES TABLE +++++++++++++++++++++")
-# df = summedFlightsByCarrier2013\
-# .join(summedCanceledByCarrier2013, ["OP_CARRIER"])\
-# .join(summedDelayedFlights1stQuarter2013ByCarrier,['OP_CARRIER'])\
-# .join(summedDelayedFlights2ndQuarter2013ByCarrier,['OP_CARRIER'])\
-# .join(summedDelayedFlights3rdQuarter2013ByCarrier,['OP_CARRIER'])\
-# .join(summedDelayedFlights4thQuarter2013ByCarrier,['OP_CARRIER'])\
-# .join(summedDelayedFlights2013,["OP_CARRIER"])\
-# .join(summedDelayOnDeparture2013,["OP_CARRIER"])\
-# .join(summedDelayOnArrival2013,["OP_CARRIER"])\
-# .join(summedDepDelayedFlights2013,["OP_CARRIER"])\
-# .join(summedArrDelayedFlights2013,["OP_CARRIER"])
-# df.show()
-# print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
+print("+++++++++++++++++++++ JOINTING DFS FOR AIRPLANE COMPANIES TABLE +++++++++++++++++++++")
+df = summedFlightsByCarrier2013\
+.join(summedCanceledByCarrier2013, ["OP_CARRIER"])\
+.join(summedDelayedFlights1stQuarter2013ByCarrier,['OP_CARRIER'])\
+.join(summedDelayedFlights2ndQuarter2013ByCarrier,['OP_CARRIER'])\
+.join(summedDelayedFlights3rdQuarter2013ByCarrier,['OP_CARRIER'])\
+.join(summedDelayedFlights4thQuarter2013ByCarrier,['OP_CARRIER'])\
+.join(summedDelayedFlights2013,["OP_CARRIER"])\
+.join(summedDelayOnDeparture2013,["OP_CARRIER"])\
+.join(summedDelayOnArrival2013,["OP_CARRIER"])\
+.join(summedDepDelayedFlights2013,["OP_CARRIER"])\
+.join(summedArrDelayedFlights2013,["OP_CARRIER"])\
+.join(summed_differences_crs_time_and_time_2013, ["OP_CARRIER"])
+df.show()
+print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
 
 
 
@@ -139,6 +150,8 @@ cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
 # Vidi CANCELLED pa po kompanijama u tromesecnom periodu
 # 7.	Koji je najgori period u toku dana, sa pragom od 3h? 
 # Isto ta dva delaya samo na nivou dana, opet pazi na praznike, nisu karakteristicni
+# 8.	Na koji način se rangiraju aviokompanije kada je u pitanju razlika između procenjenog vremena i vremena koje je stvarno proteklo od polaska do dolaska? 
+# Razlika CRS ELAPSED TIME I ACTUAL ELAPSED TIME
 
 # NO_DATA
 # 5.	Koji su najkritičniji periodi u godini za letenje?  Cilj je pokušati utvrditi korelaciju sa nekim praznicima. 
@@ -147,9 +160,6 @@ cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
 # Isto preko delay i ARR I DEP, samo na nedeljnom nivou. Mozda ce odskakati ove praznicne nedelje, pa mozda treba njih izbaciti.
 
 
-# TODO:
-# 8.	Na koji način se rangiraju aviokompanije kada je u pitanju razlika između procenjenog vremena i vremena koje je stvarno proteklo od polaska do dolaska? 
-# Razlika CRS ELAPSED TIME I ACTUAL ELAPSED TIME
 
 
 # HAS TO COMBINE ANOTHER TABLE, MAYBE TOO MUCH FOR FIRST PHASE
