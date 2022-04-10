@@ -55,7 +55,27 @@ services:
       - 8081:8081
     env_file:
       - ./hadoop.env
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    volumes:
+      - mongodb:/data/db
+    ports:
+      - '27017:27017'
+    expose:
+      - '27017'
 
+  #end region MONGODB
+
+  #region METABASE
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    volumes:
+      - metabase:/metabase-data
+    ports:
+      - '3000:3000'
+  #end region METABASE
 volumes:
   hadoop_namenode:
   hadoop_datanode1:
@@ -63,8 +83,9 @@ volumes:
   zoo1:
   zoo1log:
   kafka1:
-  postgres-data:
-  
+  mongodb:
+  metabase:
+
   # zoo1:
   #   image: zookeeper:3.4.9
   #   container_name: zoo1
@@ -96,7 +117,6 @@ volumes:
   #   depends_on:
   #     - zoo1
 
-
   # hue:
   #   image: gethue/hue:20201111-135001
   #   hostname: hue
@@ -116,33 +136,32 @@ volumes:
   #   image: postgres:latest
   #   container_name: postgres_db
   #   restart: on-failure
-  #   ports: 
+  #   ports:
   #     - 5432:5432
   #   environment:
   #     POSTGRES_USER: "postgres"
   #     POSTGRES_PASSWORD: "postgres"
   #     POSTGRES_DB: bigdata
   #   volumes:
-  #     - postgres-data:/var/lib/postgres 
-      
+  #     - postgres-data:/var/lib/postgres
 # TODO: DECIDE ON THE VISUALISATION COMPONENT
-  # metabase-app:
-  #   image: metabase/metabase
-  #   restart: always
-  #   ports:
-  #     - 3001:3000
-  #   volumes:
-  #     # declare your mount volume /host/dir:/container/dir
-  #     - /home/app/metabase-data:/metabase-data
-  #   environment:
-  #     MB_DB_TYPE: postgres
-  #     MB_DB_DBNAME: bigdata
-  #     MB_DB_PORT: 5432
-  #     MB_DB_USER: postgres
-  #     MB_DB_PASS: postgres
-  #     MB_DB_HOST: postgres_db
-  #   depends_on:
-  #     - postgres_db
-  #   links:
-  #     - postgres_db
+# metabase-app:
+#   image: metabase/metabase
+#   restart: always
+#   ports:
+#     - 3001:3000
+#   volumes:
+#     # declare your mount volume /host/dir:/container/dir
+#     - /home/app/metabase-data:/metabase-data
+#   environment:
+#     MB_DB_TYPE: postgres
+#     MB_DB_DBNAME: bigdata
+#     MB_DB_PORT: 5432
+#     MB_DB_USER: postgres
+#     MB_DB_PASS: postgres
+#     MB_DB_HOST: postgres_db
+#   depends_on:
+#     - postgres_db
+#   links:
+#     - postgres_db
 

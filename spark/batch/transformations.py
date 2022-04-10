@@ -11,130 +11,83 @@ Hdf_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]
 
 spark = SparkSession.builder.appName("airplane delays transformations").getOrCreate()
 
+# BEGINNING OF TRANSFORMATION ZONE
 dfDelaysTotal2013FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
     .option("inferSchema", "true") \
     .csv(Hdf_NAMENODE + "/data/batch-2013.csv")
 
-# dfDelaysTotal2014FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-#     .option("inferSchema", "true") \
-#     .csv(Hdf_NAMENODE + "/data/batch-2014.csv")
+dfDelaysTotal2014FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+    .option("inferSchema", "true") \
+    .csv(Hdf_NAMENODE + "/data/batch-2014.csv")
 
-# dfDelaysTotal2015FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-#     .option("inferSchema", "true") \
-#     .csv(Hdf_NAMENODE + "/data/batch-2015.csv")
+dfDelaysTotal2015FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+    .option("inferSchema", "true") \
+    .csv(Hdf_NAMENODE + "/data/batch-2015.csv")
 
-# dfDelaysTotal2016FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-#     .option("inferSchema", "true") \
-#     .csv(Hdf_NAMENODE + "/data/batch-2016.csv")
+dfDelaysTotal2016FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+    .option("inferSchema", "true") \
+    .csv(Hdf_NAMENODE + "/data/batch-2016.csv")
 
-# dfDelaysTotal2017FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
-#     .option("inferSchema", "true") \
-#     .csv(Hdf_NAMENODE + "/data/batch-2017.csv")
+dfDelaysTotal2017FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+    .option("inferSchema", "true") \
+    .csv(Hdf_NAMENODE + "/data/batch-2017.csv")
+
 
 print("===================== DELETING NOT USED COLUMNS =====================")
-
 dfDelaysTotal2013 = dfDelaysTotal2013FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-# dfDelaysTotal2014 = dfDelaysTotal2014FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-# # dfDelaysTotal2015 = dfDelaysTotal2015FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-# dfDelaysTotal2016 = dfDelaysTotal2016FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-# dfDelaysTotal2017 = dfDelaysTotal2017FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
-#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+dfDelaysTotal2014 = dfDelaysTotal2014FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+dfDelaysTotal2015 = dfDelaysTotal2015FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+dfDelaysTotal2016 = dfDelaysTotal2016FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+dfDelaysTotal2017 = dfDelaysTotal2017FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+                                                  "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
 print("===================== DONE DELETING COLUMNS =====================")
 
+
+
 print("===================== DOING UNION IN ONE BIG DATAFRAME=====================")
-# dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
-# dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
-# dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
-# dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
-print("===================== DONE =====================")
+dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
+dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
+dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
+dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
+
+print("===================== DONE WITH TRANSFORMATIONS =====================")
 
 
-cnt_cond = lambda cond: F.sum(F.when(cond, 1).otherwise(0))
+dfAirportsAndDelays = dfDelaysTotalYrs.select(F.col("ORIGIN"), F.col("DEST"), F.col("DEP_DELAY"), F.col('ARR_DELAY'))
+dfAirportsAndDelays1 = dfAirportsAndDelays.filter(F.col("DEP_DELAY")<=0).groupBy("ORIGIN").count()
+dfAirportsAndDelays1.show()
+dfAirportsAndDelays = dfAirportsAndDelays.withColumn("DEP_DELAY", when(F.col("DEP_DELAY") < 0, 0) \
+      .otherwise(F.col("DEP_DELAY")))
 
-# PART FOR AIRPLANE COMPANIES
-print("+++++++++++++++++++++ CREATING DF FOR AIRPLANE COMPANIES +++++++++++++++++++++")
-
-summedFlightsByCarrier2013 = dfDelaysTotal2013.groupBy("OP_CARRIER").count().withColumnRenamed("count", "NUM_OF_FLIGHTS")
-summedCanceledByCarrier2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('CANCELLED') > 0.0).alias('TOTAL_CANCELLED'))
-summedDelayedFlights1stQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-01-01') & (F.col("FL_DATE") <= '2013-03-31') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_1st_QUARTAL")
-summedDelayedFlights2ndQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-04-01') & (F.col("FL_DATE") <= '2013-06-30') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_2nd_QUARTAL")
-summedDelayedFlights3rdQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-07-01') & (F.col("FL_DATE") <= '2013-09-30') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_3rd_QUARTAL")
-summedDelayedFlights4thQuarter2013ByCarrier = dfDelaysTotal2013.filter(((F.col("FL_DATE") >= '2013-10-01') & (F.col("FL_DATE") <= '2013-12-31') & (F.col("CANCELLED")>0.0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_CANCELLED_4th_QUARTAL")
-summedDelayOnDeparture2013 = dfDelaysTotal2013.filter(F.col("DEP_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("DEP_DELAY").alias('SUMMED_DELAY_ON_DEP'))
-summedDelayOnArrival2013 = dfDelaysTotal2013.filter(F.col("ARR_DELAY") > 0).groupBy("OP_CARRIER").agg(F.sum("ARR_DELAY").alias('SUMMED_DELAY_ON_ARR'))
-summedDepDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('DEP_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_DEP"))
-summedArrDelayedFlights2013 = dfDelaysTotal2013.groupBy('OP_CARRIER').agg(cnt_cond(F.col('ARR_DELAY') > 0.0 ).alias("TOTAL_DELAYED_FLIGHTS_ON_ARR"))
-summedDelayedFlights2013 = dfDelaysTotal2013.filter(((F.col("DEP_DELAY") > 0) | (F.col("ARR_DELAY") > 0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_DELAYED_FLIGHTS")
-summed_differences_crs_time_and_time_2013 = dfDelaysTotal2013.select(((F.col("DEP_TIME") - F.col("CRS_DEP_TIME"))).alias("DIFFERENCE_BETWEEN_FLIGHTS"), F.col("OP_CARRIER")).filter(F.col("DIFFERENCE_BETWEEN_FLIGHTS")>0).groupBy("OP_CARRIER").mean("DIFFERENCE_BETWEEN_FLIGHTS")
-
-print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
-
-# df = summed_differences_crs_time_and_time_2013\
-# .join(summed_differences_crs_time_and_time_20131, ["OP_CARRIER"])\
-# .join(summed_differences_crs_time_and_time_20132,['OP_CARRIER'])\
-# .join(summed_differences_crs_time_and_time_20133,['OP_CARRIER'])\
-# .join(summed_differences_crs_time_and_time_20134,['OP_CARRIER'])
-
-# df.show()
-
-# PART FOR AIRPLANE COMPANIES FOR TIME OF DAY
-# print("+++++++++++++++++++++ CREATING DF FOR AIRPLANE COMPANIES FOR 4h PERIODS +++++++++++++++++++++")
-# delayByCarrier0_4 = dfDelaysTotal2013.filter(((F.col("DEP_TIME")>=0000) & (F.col("DEP_TIME")<=400) & ( (F.col("DEP_DELAY")>0.0) | (F.col("ARR_DELAY")>0.0)))).groupBy("OP_CARRIER").count().withColumnRenamed("count","DELAY_0_4")
-# delayByCarrier4_8 = dfDelaysTotal2013.filter(((F.col("DEP_TIME")>400) & (F.col("DEP_TIME")<=800) & ( (F.col("DEP_DELAY")>0.0) | (F.col("ARR_DELAY")>0.0)) )).groupBy("OP_CARRIER").count().withColumnRenamed("count","DELAY_4_8")
-# delayByCarrier8_12 = dfDelaysTotal2013.filter(((F.col("DEP_TIME")>800)& (F.col("DEP_TIME")<=1200) & ((F.col("DEP_DELAY")>0.0) | (F.col("ARR_DELAY")>0.0)))).groupBy("OP_CARRIER").count().withColumnRenamed("count","DELAY_8_12")
-# delayByCarrier12_16 = dfDelaysTotal2013.filter(((F.col("DEP_TIME")>1200) & (F.col("DEP_TIME")<=1600) & ((F.col("DEP_DELAY")>0.0) | (F.col("ARR_DELAY")>0.0)))).groupBy("OP_CARRIER").count().withColumnRenamed("count","DELAY_12_16")
-# delayByCarrier16_20 = dfDelaysTotal2013.filter(((F.col("DEP_TIME")>1600)& (F.col("DEP_TIME")<=2000) &( (F.col("DEP_DELAY")>0.0) | (F.col("ARR_DELAY")>0.0)))).groupBy("OP_CARRIER").count().withColumnRenamed("count","DELAY_16_20")
-# delayByCarrier20_24 = dfDelaysTotal2013.filter(((F.col("DEP_TIME")>2000) & (F.col("DEP_TIME")<=2359)&( (F.col("DEP_DELAY")>0.0) | (F.col("ARR_DELAY")>0.0)))).groupBy("OP_CARRIER").count().withColumnRenamed("count","DELAY_20_24")
-# summedDelayedFlights2013 = dfDelaysTotal2013.filter(((F.col("DEP_DELAY") > 0) | (F.col("ARR_DELAY") > 0))).groupBy("OP_CARRIER").count().withColumnRenamed("count","TOTAL_DELAYED_FLIGHTS")
-# print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
+dfAirportsAndDelays2 = dfAirportsAndDelays.filter(F.col("ARR_DELAY")<=0).count()
 
 
 
-# PART FOR AIRPORTS
-# print("+++++++++++++++++++++ CREATING DF FOR ORIGIN AIRPORTS +++++++++++++++++++++")
-# summedDEPDelayFlightsOnAirport = dfDelaysTotal2013.groupBy('ORIGIN').agg(cnt_cond(F.col('DEP_DELAY') > 0.0).alias('TOTAL_DELAYED_ON_DEP')).orderBy("ORIGIN")
-# print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
-# print("+++++++++++++++++++++ CREATING DF FOR DESTINATION AIRPORTS +++++++++++++++++++++")
-# summedARRDelayFlightsOnAirport = dfDelaysTotal2013.groupBy('DEST').agg(cnt_cond(F.col('ARR_DELAY') > 0.0).alias('TOTAL_DELAYED_ON_ARR')).orderBy("DEST")
-# print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
+# while True:
+#     try:
+#         dfDelaysTotalYrs.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfDelaysTotalYrs", mode="ignore")
+#         print("\n\n<<<<<<<<<< SPARK WROTE DELAY FOR TOTAL YEARS INFO TO HDFS >>>>>>>>>>>>>>>\n\n")
+#         break
+#     except:
+#         print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
+#         time.sleep(5)
+
+while True:
+    try:
+        dfAirportsAndDelays.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfAirportsAndDelays", mode="ignore")
+        print("\n\n<<<<<<<<<< SPARK WROTE DELAY FOR TOTAL YEARS INFO TO HDFS >>>>>>>>>>>>>>>\n\n")
+        break
+    except:
+        print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
+        time.sleep(5)
 
 
 
-# JOINING TABLES TO FORM A SPECIAL ONE
-print("+++++++++++++++++++++ JOINTING DFS FOR AIRPLANE COMPANIES TABLE +++++++++++++++++++++")
-df = summedFlightsByCarrier2013\
-.join(summedCanceledByCarrier2013, ["OP_CARRIER"])\
-.join(summedDelayedFlights1stQuarter2013ByCarrier,['OP_CARRIER'])\
-.join(summedDelayedFlights2ndQuarter2013ByCarrier,['OP_CARRIER'])\
-.join(summedDelayedFlights3rdQuarter2013ByCarrier,['OP_CARRIER'])\
-.join(summedDelayedFlights4thQuarter2013ByCarrier,['OP_CARRIER'])\
-.join(summedDelayedFlights2013,["OP_CARRIER"])\
-.join(summedDelayOnDeparture2013,["OP_CARRIER"])\
-.join(summedDelayOnArrival2013,["OP_CARRIER"])\
-.join(summedDepDelayedFlights2013,["OP_CARRIER"])\
-.join(summedArrDelayedFlights2013,["OP_CARRIER"])\
-.join(summed_differences_crs_time_and_time_2013, ["OP_CARRIER"])
-df.show()
-print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
-
-
-
-# JOINING TABLES TO FORM A SPECIAL ONE
-# print("+++++++++++++++++++++ JOINTING DFS FOR AIRPLANE COMPANIES 4H PERIODS OF DAY TABLE  +++++++++++++++++++++")
-# df_delays_for_days = delayByCarrier0_4\
-#     .join(delayByCarrier4_8,["OP_CARRIER"])\
-#     .join(delayByCarrier8_12,["OP_CARRIER"])\
-#     .join(delayByCarrier12_16,["OP_CARRIER"])\
-#     .join(delayByCarrier16_20,["OP_CARRIER"])\
-#     .join(delayByCarrier20_24,["OP_CARRIER"])\
-#     .join(summedDelayedFlights2013,["OP_CARRIER"])
-
-# df_delays_for_days.show()
-# print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
+# END OF TRANSFORMATION ZONE
 
 
 
@@ -167,18 +120,3 @@ print("+++++++++++++++++++++ DONE +++++++++++++++++++++")
 # 11.	Koje su države koje su najgore po pitanju kašnjenja?
 # Pogledaj DELAY i ARR i DEP i vidi po stejtovima
 
-
-# while True:
-#     try:
-#         dfDelaysTotalYrs.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/totalDelays2013-2017", mode="ignore")
-#         print("\n\n<<<<<<<<<< SPARK WROTE DELAY INFO FOR YEARS 2013 - 2017 TO Hdf >>>>>>>>>>>>>>>\n\n")
-#         break
-#     except:
-#         print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
-#         time.sleep(5)
-
-# dfDelaysTotalYrs.unpersist()
-
-
-# dfDelaysTotalYrs.show(truncate=False)
-# dfDelays2018.show(10)
