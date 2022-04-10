@@ -7,7 +7,7 @@ services:
 
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
-      - ../data:/home/data
+      - ../local-data:/home/data
       - ../import-data:/home/import-data
     environment:
       - CLUSTER_NAME=test

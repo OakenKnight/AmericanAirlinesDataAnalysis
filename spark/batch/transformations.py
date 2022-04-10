@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import time
 from pyspark.sql import SparkSession, Row
 import pyspark.sql.functions as F
 
@@ -48,33 +49,35 @@ print("===================== DONE DELETING COLUMNS =====================")
 
 
 
-print("===================== DOING UNION IN ONE BIG DATAFRAME=====================")
+print("\n\n===================== DOING UNION IN ONE BIG DATAFRAME =====================\n\n")
 dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
 dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
 dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
 dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
 
-print("===================== DONE WITH TRANSFORMATIONS =====================")
+dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('DEP_DELAY',F.when(F.col("DEP_DELAY") > 0,F.col("DEP_DELAY")).otherwise(0))
+dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('ARR_DELAY',F.when(F.col("ARR_DELAY") > 0,F.col("ARR_DELAY")).otherwise(0))
 
+
+print("\n\n===================== DOING TRANSFORMATION FOR AIRPORTS DATAFRAME =====================\n\n")
 
 dfAirportsAndDelays = dfDelaysTotalYrs.select(F.col("ORIGIN"), F.col("DEST"), F.col("DEP_DELAY"), F.col('ARR_DELAY'))
-dfAirportsAndDelays1 = dfAirportsAndDelays.filter(F.col("DEP_DELAY")<=0).groupBy("ORIGIN").count()
-dfAirportsAndDelays1.show()
-dfAirportsAndDelays = dfAirportsAndDelays.withColumn("DEP_DELAY", when(F.col("DEP_DELAY") < 0, 0) \
-      .otherwise(F.col("DEP_DELAY")))
+dfAirportsAndDelays = dfAirportsAndDelays.withColumn('DEP_DELAY',F.when(F.col("DEP_DELAY") > 0,F.col("DEP_DELAY")).otherwise(0))
+dfAirportsAndDelays = dfAirportsAndDelays.withColumn('ARR_DELAY',F.when(F.col("ARR_DELAY") > 0,F.col("ARR_DELAY")).otherwise(0))
 
-dfAirportsAndDelays2 = dfAirportsAndDelays.filter(F.col("ARR_DELAY")<=0).count()
+dfAirportsAndDelays.show()
+
+print("\n\n===================== DONE WITH TRANSFORMATIONS =====================\n\n")
 
 
-
-# while True:
-#     try:
-#         dfDelaysTotalYrs.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfDelaysTotalYrs", mode="ignore")
-#         print("\n\n<<<<<<<<<< SPARK WROTE DELAY FOR TOTAL YEARS INFO TO HDFS >>>>>>>>>>>>>>>\n\n")
-#         break
-#     except:
-#         print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
-#         time.sleep(5)
+while True:
+    try:
+        dfDelaysTotalYrs.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfDelaysTotalYrs", mode="ignore")
+        print("\n\n<<<<<<<<<< SPARK WROTE DELAY FOR TOTAL YEARS INFO TO HDFS >>>>>>>>>>>>>>>\n\n")
+        break
+    except:
+        print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
+        time.sleep(5)
 
 while True:
     try:
