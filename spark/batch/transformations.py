@@ -1,11 +1,10 @@
 #!/usr/bin/python
 
 import os
+import time
 from pyspark.sql import SparkSession, Row
-from pyspark.sql.functions import explode
-from pyspark.sql.functions import create_map
-from pyspark.sql.functions import col
-from pyspark.sql.functions import expr
+import pyspark.sql.functions as F
+
 from pyspark.sql.types import *
 
 print('=========================== Transformations started ===========================')
@@ -13,6 +12,7 @@ Hdf_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]
 
 spark = SparkSession.builder.appName("airplane delays transformations").getOrCreate()
 
+# BEGINNING OF TRANSFORMATION ZONE
 dfDelaysTotal2013FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
     .option("inferSchema", "true") \
     .csv(Hdf_NAMENODE + "/data/batch-2013.csv")
@@ -33,8 +33,8 @@ dfDelaysTotal2017FromCSV = spark.read.option("multiline", "true").option("sep", 
     .option("inferSchema", "true") \
     .csv(Hdf_NAMENODE + "/data/batch-2017.csv")
 
-print("===================== DELETING NOT USED COLUMNS =====================")
 
+print("===================== DELETING NOT USED COLUMNS =====================")
 dfDelaysTotal2013 = dfDelaysTotal2013FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
 dfDelaysTotal2014 = dfDelaysTotal2014FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
@@ -45,61 +45,81 @@ dfDelaysTotal2016 = dfDelaysTotal2016FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLAT
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
 dfDelaysTotal2017 = dfDelaysTotal2017FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
-
 print("===================== DONE DELETING COLUMNS =====================")
 
-print("===================== DOING UNION IN ONE BIG DATAFRAME=====================")
+
+
+print("\n\n===================== DOING UNION IN ONE BIG DATAFRAME =====================\n\n")
 dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
 dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
 dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
 dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
-print("===================== DONE =====================")
 
-customAggregatedSchemaG = StructType() \
-    .add("OP_CARRIER", StringType()) \
-    .add("NUM_OF_FLIGHTS", IntegerType()) \
-    .add("NUM_OF_DELAYED_FLIGHTS", IntegerType()) \
-    .add("TOTAL_DELAY_ALL_TIME", IntegerType()) \
-    .add("TOTAL_CANCELLED", IntegerType()) \
-
-    
-# FL_DATE   1
-# OP_CARRIER 1
-# ORIGIN 1
-# DEST 1
-# CRS_DEP_TIME 1
-# DEP_TIME 1
-# DEP_DELAY OBAVEZNO
-# TAXI_OUT 0
-# WHEELS_OFF 0
-# WHEELS_ON 0
-# TAXI_IN 0
-# CRS_ARR_TIME 1
-# ARR_TIME 1
-# ARR_DELAY OBAVEZNO
-# CANCELLED 1
-# CRS_ELAPSED_TIME 
-# ACTUAL_ELAPSED_TIME
-# AIR_TIME 
-# DISTANCE 1
-# CARRIER_DELAY nekako merge
-# WEATHER_DELAY nekako merge
-# NAS_DELAY nekako merge
-# SECURITY_DELAY nekako merge
-# LATE_AIRCRAFT_DELAY nekako merge
+dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('DEP_DELAY',F.when(F.col("DEP_DELAY") > 0,F.col("DEP_DELAY")).otherwise(0))
+dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('ARR_DELAY',F.when(F.col("ARR_DELAY") > 0,F.col("ARR_DELAY")).otherwise(0))
 
 
-# while True:
-#     try:
-#         dfDelaysTotalYrs.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/totalDelays2013-2017", mode="ignore")
-#         print("\n\n<<<<<<<<<< SPARK WROTE DELAY INFO FOR YEARS 2013 - 2017 TO Hdf >>>>>>>>>>>>>>>\n\n")
-#         break
-#     except:
-#         print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
-#         time.sleep(5)
+print("\n\n===================== DOING TRANSFORMATION FOR AIRPORTS DATAFRAME =====================\n\n")
 
-dfDelaysTotalYrs.unpersist()
+dfAirportsAndDelays = dfDelaysTotalYrs.select(F.col("ORIGIN"), F.col("DEST"), F.col("DEP_DELAY"), F.col('ARR_DELAY'))
+dfAirportsAndDelays = dfAirportsAndDelays.withColumn('DEP_DELAY',F.when(F.col("DEP_DELAY") > 0,F.col("DEP_DELAY")).otherwise(0))
+dfAirportsAndDelays = dfAirportsAndDelays.withColumn('ARR_DELAY',F.when(F.col("ARR_DELAY") > 0,F.col("ARR_DELAY")).otherwise(0))
+
+dfAirportsAndDelays.show()
+
+print("\n\n===================== DONE WITH TRANSFORMATIONS =====================\n\n")
 
 
-dfDelaysTotalYrs.show(truncate=False)
-# dfDelays2018.show(10)
+while True:
+    try:
+        dfDelaysTotalYrs.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfDelaysTotalYrs", mode="ignore")
+        print("\n\n<<<<<<<<<< SPARK WROTE DELAY FOR TOTAL YEARS INFO TO HDFS >>>>>>>>>>>>>>>\n\n")
+        break
+    except:
+        print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
+        time.sleep(5)
+
+while True:
+    try:
+        dfAirportsAndDelays.write.option("header", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfAirportsAndDelays", mode="ignore")
+        print("\n\n<<<<<<<<<< SPARK WROTE DELAY FOR TOTAL YEARS INFO TO HDFS >>>>>>>>>>>>>>>\n\n")
+        break
+    except:
+        print("<<<<<<<<<<<<<< Failure! Trying again... >>>>>>>>>>>>")
+        time.sleep(5)
+
+
+
+# END OF TRANSFORMATION ZONE
+
+
+
+
+# DONE
+# 1.	Na koji način se rangiraju aerodromi kada je u pitanju kašnjenje pri polasku? 
+# Sortirati aerodrome prema DEP_DELAY
+# 2.	Na koji način se rangiraju aerodromi kada je u pitanju kašnjenje pri dolasku? 
+# Sortirati aerodrome prema ARR_DELAY
+# 3.	Na koji način se rangiraju aviokompanije kada je u pitanju kašnjenje? 
+# Nisam siguran da li treba sortirati aviokompanije samo prema CARRIER_DELAY ili prema zbiru CARRIER_DELAY, WEATHER_DELAY, NAS_DELAY, SECURITY_DELAY, LATE_AIRCRAFT_DELAY
+# 10.	Koja je avio kompanija sa najviše odustanaka u tromesečnom periodu? 
+# Vidi CANCELLED pa po kompanijama u tromesecnom periodu
+# 7.	Koji je najgori period u toku dana, sa pragom od 3h? 
+# Isto ta dva delaya samo na nivou dana, opet pazi na praznike, nisu karakteristicni
+# 8.	Na koji način se rangiraju aviokompanije kada je u pitanju razlika između procenjenog vremena i vremena koje je stvarno proteklo od polaska do dolaska? 
+# Razlika CRS ELAPSED TIME I ACTUAL ELAPSED TIME
+
+# NO_DATA
+# 5.	Koji su najkritičniji periodi u godini za letenje?  Cilj je pokušati utvrditi korelaciju sa nekim praznicima. 
+# Ovo vrv moze se gledati i prema aerodromima I prema kompanijama. Mozda najbolje gledati spram ARR DELAY I DEP DELAY, za celu godinu pa izvuci dane. Vrv ce to biti thanksgiving. 4. Jul, bozic itd., a mozda i leto u nekim periodima
+# 6.	Koji je najkritičniji dan u nedelji za letenje? 
+# Isto preko delay i ARR I DEP, samo na nedeljnom nivou. Mozda ce odskakati ove praznicne nedelje, pa mozda treba njih izbaciti.
+
+
+
+
+# HAS TO COMBINE ANOTHER TABLE, MAYBE TOO MUCH FOR FIRST PHASE
+#druga tabela
+# 11.	Koje su države koje su najgore po pitanju kašnjenja?
+# Pogledaj DELAY i ARR i DEP i vidi po stejtovima
+
