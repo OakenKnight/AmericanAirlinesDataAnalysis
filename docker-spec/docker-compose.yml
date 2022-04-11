@@ -103,6 +103,19 @@ services:
       - kafka1:/var/lib/kafka/data
     depends_on:
       - zoo1
+  producer1:
+    build: ../spark/real-time/producer
+    container_name: kafka_producer
+    command: python3 /home/producer/producer.py
+    environment:
+      KAFKA_BROKER: "kafka1:19092"
+    env_file:
+      - ../.env
+    depends_on:
+      - kafka1
+    restart: always
+    volumes:
+      - ../spark/real-time/producer:/home/producer
 
 volumes:
   hadoop_namenode:

@@ -1,0 +1,4 @@
+kafka-python
+python-twitter
+tweepy
+python-decouple
