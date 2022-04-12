@@ -33,6 +33,9 @@ dfDelaysTotal2017FromCSV = spark.read.option("multiline", "true").option("sep", 
     .option("inferSchema", "true") \
     .csv(Hdf_NAMENODE + "/data/batch-2017.csv")
 
+# dfDelaysTotal2018FromCSV = spark.read.option("multiline", "true").option("sep", ",").option("header", "true") \
+#     .option("inferSchema", "true") \
+#     .csv(Hdf_NAMENODE + "/data/batch-2018.csv")
 
 print("===================== DELETING NOT USED COLUMNS =====================")
 dfDelaysTotal2013 = dfDelaysTotal2013FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
@@ -45,6 +48,9 @@ dfDelaysTotal2016 = dfDelaysTotal2016FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLAT
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
 dfDelaysTotal2017 = dfDelaysTotal2017FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN")
+# dfDelaysTotal2018 = dfDelaysTotal2018FromCSV.drop("OP_CARRIER_FL_NUM","CANCELLATION_CODE", "TAXI_OUT", "WHEELS_OFF", "WHEELS_ON"
+#                                                   "DIVERTED", "Unnamed: 27\r", "TAXI_IN") 
+
 print("===================== DONE DELETING COLUMNS =====================")
 
 
@@ -53,7 +59,8 @@ print("\n\n===================== DOING UNION IN ONE BIG DATAFRAME ==============
 dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
 dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
 dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
-dfDelaysTotalYrs=dfDelaysTotalYrs3.union(dfDelaysTotal2017)
+dfDelaysTotalYrs = dfDelaysTotalYrs3.union(dfDelaysTotal2017)
+dfDelaysTotalYrs = dfDelaysTotalYrs3.union(dfDelaysTotal2018)
 
 dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('DEP_DELAY',F.when(F.col("DEP_DELAY") > 0,F.col("DEP_DELAY")).otherwise(0))
 dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('ARR_DELAY',F.when(F.col("ARR_DELAY") > 0,F.col("ARR_DELAY")).otherwise(0))
