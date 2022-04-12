@@ -60,7 +60,7 @@ dfDelaysTotalYrs1 = dfDelaysTotal2013.union(dfDelaysTotal2014)
 dfDelaysTotalYrs2 = dfDelaysTotalYrs1.union(dfDelaysTotal2015)
 dfDelaysTotalYrs3 = dfDelaysTotalYrs2.union(dfDelaysTotal2016)
 dfDelaysTotalYrs = dfDelaysTotalYrs3.union(dfDelaysTotal2017)
-dfDelaysTotalYrs = dfDelaysTotalYrs3.union(dfDelaysTotal2018)
+# dfDelaysTotalYrs = dfDelaysTotalYrs3.union(dfDelaysTotal2018)
 
 dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('DEP_DELAY',F.when(F.col("DEP_DELAY") > 0,F.col("DEP_DELAY")).otherwise(0))
 dfDelaysTotalYrs = dfDelaysTotalYrs.withColumn('ARR_DELAY',F.when(F.col("ARR_DELAY") > 0,F.col("ARR_DELAY")).otherwise(0))
