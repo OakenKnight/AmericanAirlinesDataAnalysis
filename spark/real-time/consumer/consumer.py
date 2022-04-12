@@ -14,6 +14,11 @@ def write_df_to_mongo_delayed(df, epoch_id):
     df.write.format("mongo").mode("append").option("database","streaming-data").\
     option("collection", "delayed_tweets").save()
 
+def write_df_to_mongo_airlines(df, epoch_id):
+    df.show()
+    df.write.format("mongo").mode("append").option("database","streaming-data").\
+    option("collection", "airlines_tweets").save()
+
 spark = SparkSession \
     .builder \
     .appName("Spark streaming twitter consumer") \
@@ -46,32 +51,61 @@ tweets_with_cancelled = tweets.select(tweets.timestamp, tweets.data). \
         lower(tweets.data.text).contains("cancelled")) | (lower(tweets.data.text).contains("flight") & \
         lower(tweets.data.text).contains("canceled") )|  (lower(tweets.data.text).contains("flights") & \
         lower(tweets.data.text).contains("canceled") ) |  (lower(tweets.data.text).contains("flights") & \
+        lower(tweets.data.text).contains("cancels") ) |  (lower(tweets.data.text).contains("flights") & \
+        lower(tweets.data.text).contains("cancells") )|  (lower(tweets.data.text).contains("flight") & \
         lower(tweets.data.text).contains("cancels") ) |  (lower(tweets.data.text).contains("flight") & \
-        lower(tweets.data.text).contains("cancels") )|  (lower(tweets.data.text).contains("flight") & \
-        lower(tweets.data.text).contains("cancels") ) |  (lower(tweets.data.text).contains("fligh") & \
-        lower(tweets.data.text).contains("cancels") ))
-
-tweets_with_delayed_count = tweets_with_delayed. \
-    groupBy(window(tweets_with_delayed.timestamp, "30 seconds")). \
-    count().withColumnRenamed("count", "NUM_TWEETS_WITH_DELAYS")
+        lower(tweets.data.text).contains("cancells") ))
 
 
-tweets_with_cancells_count = tweets_with_cancelled. \
-    groupBy(window(tweets_with_cancelled.timestamp, "30 seconds")). \
-    count().withColumnRenamed("count", "NUM_TWEETS_WITH_CANCELLED")
+relevant_airlines = [Row("jetblue"), Row("jetbluecheeps"), Row("southwestair"),\
+    Row("americanair"), Row("delta"), Row("deltaassist"), Row("virginamerica"), Row("usairways"), \
+    Row("united"), Row("alaskaair"), Row("hawaiianair"), Row("hawaiianfares"), \
+    Row("spiritairlines")]
+
+airlines_schema = StructType().add("user", StringType())
+
+df_relevant_airlines = spark.createDataFrame(spark.sparkContext.parallelize(relevant_airlines), airlines_schema)
 
 
-qtweets_with_cancells_count = tweets_with_cancelled \
+
+relevant_airline_tweets = tweets.select(
+    tweets.data.user.alias("user"),
+    tweets.timestamp
+).join(df_relevant_airlines, "user")
+
+relevant_tweets_count_per_user = relevant_airline_tweets.groupBy(window(relevant_airline_tweets.timestamp, "30 seconds"), relevant_airline_tweets.user).\
+    count().withColumnRenamed("count", "NUM_TWEETS_PER_AIRLINE")
+
+
+# tweets_with_delayed_count = tweets_with_delayed. \
+#     groupBy(window(tweets_with_delayed.timestamp, "30 seconds")). \
+#     count().withColumnRenamed("count", "NUM_TWEETS_WITH_DELAYS")
+
+
+# tweets_with_cancells_count = tweets_with_cancelled. \
+#     groupBy(window(tweets_with_cancelled.timestamp, "30 seconds")). \
+#     count().withColumnRenamed("count", "NUM_TWEETS_WITH_CANCELLED")
+
+
+# qtweets_with_cancells = tweets_with_cancelled \
+#     .writeStream \
+#     .foreachBatch(write_df_to_mongo_cancelled) \
+#     .outputMode("append") \
+#     .start()
+
+# qtweets_with_delays = tweets_with_delayed \
+#     .writeStream \
+#     .foreachBatch(write_df_to_mongo_delayed) \
+#     .outputMode("append") \
+#     .start()
+
+
+qrelevant_airline_tweets = relevant_airline_tweets \
     .writeStream \
-    .foreachBatch(write_df_to_mongo_cancelled) \
+    .foreachBatch(write_df_to_mongo_airlines) \
     .outputMode("append") \
     .start()
 
-qtweets_with_delays_count = tweets_with_delayed \
-    .writeStream \
-    .foreachBatch(write_df_to_mongo_delayed) \
-    .outputMode("append") \
-    .start()
-
-qtweets_with_cancells_count.awaitTermination()
-qtweets_with_delays_count.awaitTermination()
+qrelevant_airline_tweets.awaitTermination()
+# qtweets_with_cancells.awaitTermination()
+# qtweets_with_delays.awaitTermination()
