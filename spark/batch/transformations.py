@@ -7,7 +7,8 @@ import pyspark.sql.functions as F
 
 from pyspark.sql.types import *
 
-print('=========================== Transformations started ===========================')
+print('\n\n=========================== Transformations started ===========================\n\n')
+
 Hdf_NAMENODE = os.environ["CORE_CONF_fs_defaultFS"]
 
 spark = SparkSession.builder.appName("airplane delays transformations").getOrCreate()
