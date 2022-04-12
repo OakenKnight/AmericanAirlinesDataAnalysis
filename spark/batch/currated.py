@@ -21,7 +21,7 @@ while True:
     try:
         dfDelaysTotalYrs = sparkMongo.read.option("multiline", "true").option("sep", ",").option("header", "true") \
         .option("inferSchema", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfDelaysTotalYrs")
-        print("\n\n<<<<<<<<< CURATED COMPONENT READ dfDelaysTotalYrs >>>>>>>>>>>\n\n")
+        print("\n\n<<<<<<<<< CURRATED COMPONENT READ dfDelaysTotalYrs >>>>>>>>>>>\n\n")
         break
     except:
         print("<<<<<<<<<<<<<<<<< Failure reading! Retrying... >>>>>>>>>>>>>>>>>")
@@ -31,7 +31,7 @@ while True:
     try:
         dfAirportsAndDelays = sparkMongo.read.option("multiline", "true").option("sep", ",").option("header", "true") \
         .option("inferSchema", "true").csv(Hdf_NAMENODE + "/transformation_layer/dfAirportsAndDelays")
-        print("\n\n<<<<<<<<< CURATED COMPONENT READ dfAirportsAndDelays >>>>>>>>>>>\n\n")
+        print("\n\n<<<<<<<<< CURRATED COMPONENT READ dfAirportsAndDelays >>>>>>>>>>>\n\n")
         break
     except:
         print("<<<<<<<<<<<<<<<<< Failure reading! Retrying... >>>>>>>>>>>>>>>>>")

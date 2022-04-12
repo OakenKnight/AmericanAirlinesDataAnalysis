@@ -41,11 +41,11 @@ class ListenerTS(Stream):
         value = {'text': text, 'user': user}
         value_json = json.dumps(value)
         print(value_json)
-        # producer.send(topic_name, bytes(value_json, 'utf-8'))
+        producer.send(topic_name, bytes(value_json, 'utf-8'))
         return True
 
 print("\n\n\n+++++++ PRODUCER STARTED +++++++\n\n\n")
 
 listener = ListenerTS(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_SECRET)
-listener.filter(track=["flight delayed", "flight delay", "flights delayed", "flight canceled","flight cancelled","flights canceled", "flights cancelled"], \
+listener.filter(track=["flight delayed", "flight delay", "flights delayed", "flight canceled","flight cancelled","flight cancels","flight cancells","flights cancels","flights cancells","flights canceled", "flights cancelled"], \
     stall_warnings=True, languages=["en"])
